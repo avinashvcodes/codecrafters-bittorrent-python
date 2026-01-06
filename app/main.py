@@ -1,17 +1,24 @@
 import json
 import sys
+class BytesEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, bytes):
+            return o.decode()
+        return super().default(o)
+
+BDECODING_VALUE_ERROR = "Invalid encoded value"
 
 def _decode_bencode(bencoded_value: bytes, start: int = 0):
     if bencoded_value[start] == ord('i'):
         end_index = bencoded_value.find(b'e', start)
         if end_index == -1:
-            raise ValueError("Invalid encoded value")
+            raise ValueError(BDECODING_VALUE_ERROR)
         return bencoded_value[start+1: end_index], end_index+1
 
     if chr(bencoded_value[start]).isdigit():
         first_colon_index = bencoded_value.find(b":", start)
         if first_colon_index == -1:
-            raise ValueError("Invalid encoded value")
+            raise ValueError(BDECODING_VALUE_ERROR)
         lenos = int(bencoded_value[start:first_colon_index].decode())
         return bencoded_value[first_colon_index+1: first_colon_index+1+lenos], first_colon_index+1+lenos
 
@@ -34,7 +41,7 @@ def _decode_bencode(bencoded_value: bytes, start: int = 0):
 
         return result, start+1
 
-    raise ValueError("Invalid encoded value")
+    raise ValueError(BDECODING_VALUE_ERROR)
 
 def decode_bencode(bencoded):
     return _decode_bencode(bencoded)[0]
@@ -46,14 +53,7 @@ def main():
 
     if command == "decode":
         bencoded_value = sys.argv[2].encode()
-
-        def bytes_to_str(data):
-            if isinstance(data, bytes):
-                return data.decode()
-
-            raise TypeError(f"Type not serializable: {type(data)}")
-
-        print(json.dumps(decode_bencode(bencoded_value), default=bytes_to_str))
+        print(json.dumps(decode_bencode(bencoded_value), cls=BytesEncoder))
     else:
         raise NotImplementedError(f"Unknown command {command}")
 
