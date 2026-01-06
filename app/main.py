@@ -1,7 +1,7 @@
 import json
 import sys
 
-def decode_bencoded(bencoded_value: bytes, start: int=0):
+def _decode_bencode(bencoded_value: bytes, start: int = 0):
     if bencoded_value[start] == ord('i'):
         end_index = bencoded_value.find(b'e', start)
         if end_index == -1:
@@ -19,8 +19,8 @@ def decode_bencoded(bencoded_value: bytes, start: int=0):
         start += 1
         result = {}
         while bencoded_value[start] != ord('e'):
-            key, start = decode_bencoded(bencoded_value, start)
-            value, start = decode_bencoded(bencoded_value, start)
+            key, start = _decode_bencode(bencoded_value, start)
+            value, start = _decode_bencode(bencoded_value, start)
             result[key] = value
         return result, start+1
 
@@ -29,12 +29,15 @@ def decode_bencoded(bencoded_value: bytes, start: int=0):
         result = []
 
         while bencoded_value[start] != ord('e'):
-            element, start = decode_bencoded(bencoded_value, start)
+            element, start = _decode_bencode(bencoded_value, start)
             result.append(element)
 
         return result, start+1
 
     raise ValueError("Invalid encoded value")
+
+def decode_bencode(bencoded):
+    return _decode_bencode(bencoded)[0]
 
 def main():
     command = sys.argv[1]
@@ -50,7 +53,7 @@ def main():
 
             raise TypeError(f"Type not serializable: {type(data)}")
 
-        print(json.dumps(decode_bencoded(bencoded_value), default=bytes_to_str))
+        print(json.dumps(decode_bencode(bencoded_value), default=bytes_to_str))
     else:
         raise NotImplementedError(f"Unknown command {command}")
 
