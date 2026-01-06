@@ -1,10 +1,5 @@
 import json
 import sys
-class BytesEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, bytes):
-            return o.decode()
-        return super().default(o)
 
 BDECODING_VALUE_ERROR = "Invalid encoded value"
 
@@ -13,14 +8,14 @@ def _decode_bencode(bencoded_value: bytes, start: int = 0):
         end_index = bencoded_value.find(b'e', start)
         if end_index == -1:
             raise ValueError(BDECODING_VALUE_ERROR)
-        return bencoded_value[start+1: end_index], end_index+1
+        return int(bencoded_value[start+1: end_index].decode()), end_index+1
 
     if chr(bencoded_value[start]).isdigit():
         first_colon_index = bencoded_value.find(b":", start)
         if first_colon_index == -1:
             raise ValueError(BDECODING_VALUE_ERROR)
         lenos = int(bencoded_value[start:first_colon_index].decode())
-        return bencoded_value[first_colon_index+1: first_colon_index+1+lenos], first_colon_index+1+lenos
+        return bencoded_value[first_colon_index+1: first_colon_index+1+lenos].decode(), first_colon_index+1+lenos
 
     if bencoded_value[start] == ord('d'):
         start += 1
@@ -53,7 +48,7 @@ def main():
 
     if command == "decode":
         bencoded_value = sys.argv[2].encode()
-        print(json.dumps(decode_bencode(bencoded_value), cls=BytesEncoder))
+        print(json.dumps(decode_bencode(bencoded_value)))
     else:
         raise NotImplementedError(f"Unknown command {command}")
 
